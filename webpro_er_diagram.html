@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>WEBPRO入力シート E-R図</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+        h1, h2 { color: #333; }
+        .mermaid { background: white; padding: 20px; border-radius: 8px; overflow-x: auto; }
+        .section { background: white; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .warning { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 10px 0; }
+        .ok { background: #d4edda; padding: 10px; border-left: 4px solid #28a745; margin: 10px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #e0e0e0; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>WEBPRO入力シート E-R図</h1>
+    
+    <div class="section">
+        <h2>全体構造</h2>
+        <div class="mermaid">
+erDiagram
+    BUILDING ||--o{ ROOM : has
+    BUILDING ||--o{ WALL_SPEC : has
+    BUILDING ||--o{ WINDOW_SPEC : has
+    BUILDING ||--o{ HEAT_SOURCE_GROUP : has
+    BUILDING ||--o{ SECONDARY_PUMP_GROUP : has
+    BUILDING ||--o{ AHU_GROUP : has
+    
+    ROOM ||--o{ ZONE : contains
+    ZONE ||--o{ ENVELOPE : has
+    ZONE }o--|| AHU_GROUP : served_by
+    
+    HEAT_SOURCE_GROUP ||--o{ HEAT_SOURCE_UNIT : contains
+    SECONDARY_PUMP_GROUP ||--o{ SECONDARY_PUMP_UNIT : contains
+    AHU_GROUP ||--o{ AHU_UNIT : contains
+    
+    ENVELOPE }o--|| WALL_SPEC : references
+    ENVELOPE }o--o| WINDOW_SPEC : references
+
+    BUILDING {
+        string building_id PK
+        string name "建物名称"
+        int region "地域区分"
+        string prefecture "都道府県"
+        float total_area "延べ面積"
+        string solar_region "日射地域区分"
+    }
+
+    ROOM {
+        string room_id PK
+        string building_id FK
+        string floor "階"
+        string room_name "室名"
+        string building_use "建物用途"
+        string room_use "室用途"
+        float area "室面積"
+        float floor_height "階高"
+        float ceiling_height "天井高"
+        bool ac_target "空調計算対象"
+        bool vent_target "換気計算対象"
+        bool light_target "照明計算対象"
+        bool hw_target "給湯計算対象"
+    }
+
+    ZONE {
+        string zone_id PK
+        string room_id FK
+        string floor "階"
+        string zone_name "空調ゾーン名"
+        string ahu_group_id FK "室負荷処理"
+        string ahu_group_oa_id FK "外気負荷処理"
+    }
+
+    WALL_SPEC {
+        string wall_spec_id PK "W1, FG1など"
+        string building_id FK
+        string wall_type "壁の種類"
+        float u_value "熱貫流率"
+    }
+
+    WINDOW_SPEC {
+        string window_spec_id PK "G1など"
+        string building_id FK
+        float u_value "熱貫流率"
+        float eta_value "日射熱取得率"
+        string frame_type "建具の種類"
+    }
+
+    ENVELOPE {
+        string envelope_id PK
+        string zone_id FK
+        string direction "方位"
+        float shade_cool "日除け効果係数(冷房)"
+        float shade_heat "日除け効果係数(暖房)"
+        string wall_spec_id FK
+        float wall_area "外皮面積"
+        string window_spec_id FK
+        float window_area "窓面積"
+        string blind "ブラインド有無"
+    }
+
+    HEAT_SOURCE_GROUP {
+        string hs_group_id PK "AR1, EHP1-1Oなど"
+        string building_id FK
+        string simultaneous "冷暖同時供給有無"
+        string unit_control "台数制御"
+        string operation_mode "運転モード"
+        float storage_capacity "蓄熱容量"
+    }
+
+    HEAT_SOURCE_UNIT {
+        string hs_unit_id PK
+        string hs_group_id FK
+        string equipment_type "熱源機種"
+        int priority_cool "運転順位(冷)"
+        int priority_heat "運転順位(温)"
+        int quantity "台数"
+        float cooling_capacity "定格冷却能力"
+        float heating_capacity "定格加熱能力"
+        float cooling_power "主機消費エネルギー(冷)"
+        float heating_power "主機消費エネルギー(温)"
+    }
+
+    SECONDARY_PUMP_GROUP {
+        string pump_group_id PK
+        string building_id FK
+        string unit_control "台数制御有無"
+        float temp_diff_cool "冷房時温度差"
+        float temp_diff_heat "暖房時温度差"
+    }
+
+    SECONDARY_PUMP_UNIT {
+        string pump_unit_id PK
+        string pump_group_id FK
+        int priority "運転順位"
+        int quantity "台数"
+        float flow_rate "定格流量"
+        float power "定格消費電力"
+        string flow_control "流量制御方式"
+    }
+
+    AHU_GROUP {
+        string ahu_group_id PK "EHP1-1, FCU1-1など"
+        string building_id FK
+        string pump_group_cool FK "二次ポンプ(冷)"
+        string pump_group_heat FK "二次ポンプ(温)"
+        string hs_group_cool FK "熱源(冷)"
+        string hs_group_heat FK "熱源(温)"
+    }
+
+    AHU_UNIT {
+        string ahu_unit_id PK
+        string ahu_group_id FK
+        int quantity "台数"
+        string ahu_type "空調機タイプ"
+        float cooling_capacity "定格冷却能力"
+        float heating_capacity "定格加熱能力"
+        float supply_fan_power "給気ファン消費電力"
+        string volume_control "風量制御方式"
+        string hex_type "全熱交換器有無"
+    }
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>様式とテーブルの対応</h2>
+        <table>
+            <tr>
+                <th>様式</th>
+                <th>正規化後テーブル</th>
+                <th>難易度</th>
+                <th>変換ポイント</th>
+            </tr>
+            <tr>
+                <td>0) 基本情報</td>
+                <td><code>BUILDING</code></td>
+                <td>★☆☆</td>
+                <td>1建物1行、そのまま</td>
+            </tr>
+            <tr>
+                <td>1) 室仕様</td>
+                <td><code>ROOM</code></td>
+                <td>★☆☆</td>
+                <td>1室1行、そのまま</td>
+            </tr>
+            <tr>
+                <td>2-1) 空調ゾーン</td>
+                <td><code>ZONE</code></td>
+                <td>★☆☆</td>
+                <td>1ゾーン1行、そのまま</td>
+            </tr>
+            <tr>
+                <td>2-2) 外壁構成</td>
+                <td><code>WALL_SPEC</code></td>
+                <td>★★☆</td>
+                <td>層構成は別テーブル化も可</td>
+            </tr>
+            <tr>
+                <td>2-3) 窓仕様</td>
+                <td><code>WINDOW_SPEC</code></td>
+                <td>★☆☆</td>
+                <td>1仕様1行</td>
+            </tr>
+            <tr style="background:#fff3cd;">
+                <td>2-4) 外皮</td>
+                <td><code>ENVELOPE</code></td>
+                <td>★★★</td>
+                <td>⚠️ 親子分解: ゾーン×方位で複数行</td>
+            </tr>
+            <tr style="background:#fff3cd;">
+                <td>2-5) 熱源</td>
+                <td><code>HEAT_SOURCE_GROUP</code><br><code>HEAT_SOURCE_UNIT</code></td>
+                <td>★★★</td>
+                <td>⚠️ 親子分解: 熱源群→個別機器</td>
+            </tr>
+            <tr>
+                <td>2-6) 二次ポンプ</td>
+                <td><code>SECONDARY_PUMP_GROUP</code><br><code>SECONDARY_PUMP_UNIT</code></td>
+                <td>★★★</td>
+                <td>⚠️ 親子分解</td>
+            </tr>
+            <tr style="background:#fff3cd;">
+                <td>2-7) 空調機</td>
+                <td><code>AHU_GROUP</code><br><code>AHU_UNIT</code></td>
+                <td>★★★</td>
+                <td>⚠️ 親子分解: 空調機群→個別ユニット</td>
+            </tr>
+            <tr>
+                <td>3-1) 換気室</td>
+                <td><code>VENT_ROOM</code></td>
+                <td>★☆☆</td>
+                <td>1室1行</td>
+            </tr>
+            <tr>
+                <td>4) 照明</td>
+                <td><code>LIGHTING</code></td>
+                <td>★★☆</td>
+                <td>1室に複数器具がある場合あり</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>親子分解が必要なパターン</h2>
+        
+        <div class="warning">
+            <strong>パターン: 空欄で上のセルを参照</strong>
+            <pre>
+【元データ: 様式2-5 熱源】
+熱源群名称  熱源機種              運転順位  台数
+AR1        吸収式冷凍機           1番目     1    ← 親
+           吸収式冷凍機           2番目     1    ← 子（AR1に属する）
+EHP1-1O    パッケージエアコン     1番目     1    ← 別の親
+
+【正規化後: HEAT_SOURCE_GROUP】
+hs_group_id  simultaneous  unit_control
+AR1          無            有
+EHP1-1O      無            無
+
+【正規化後: HEAT_SOURCE_UNIT】
+hs_unit_id  hs_group_id  equipment_type     priority_cool  quantity
+AR1-1       AR1          吸収式冷凍機        1              1
+AR1-2       AR1          吸収式冷凍機        2              1
+EHP1-1O-1   EHP1-1O      パッケージエアコン  1              1
+            </pre>
+        </div>
+
+        <div class="warning">
+            <strong>パターン: 1ゾーンに複数方位</strong>
+            <pre>
+【元データ: 様式2-4 外皮】
+階   空調ゾーン名       方位  外壁名称  外皮面積
+1F   中央監視室・警備室  南    W1       38.8   ← 親
+                        西    W1       12.5   ← 子
+                        日陰  FG1      39     ← 子
+
+【正規化後: ENVELOPE】
+envelope_id  zone_id        direction  wall_spec_id  wall_area
+ENV001       ZONE_中央監視  南         W1            38.8
+ENV002       ZONE_中央監視  西         W1            12.5
+ENV003       ZONE_中央監視  日陰       FG1           39
+            </pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>変換スクリプトの処理フロー</h2>
+        <div class="mermaid">
+flowchart TD
+    A[Excelファイル読み込み] --> B{シートごとに処理}
+    B --> C[ヘッダー行を特定]
+    C --> D[データ行を抽出]
+    D --> E{親子関係あり?}
+    E -->|Yes| F[空欄セルを上の値で埋める]
+    F --> G[親テーブルと子テーブルに分割]
+    E -->|No| H[そのままテーブル化]
+    G --> I[一意IDを付与]
+    H --> I
+    I --> J[CSV/SQLite出力]
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>キーとなる関係</h2>
+        <ul>
+            <li><strong>ROOM → ZONE</strong>: 1室1ゾーン（このサンプルでは）</li>
+            <li><strong>ZONE → AHU_GROUP</strong>: ゾーンは空調機群で処理される</li>
+            <li><strong>AHU_GROUP → HEAT_SOURCE_GROUP</strong>: 空調機は熱源から供給を受ける</li>
+            <li><strong>ZONE → ENVELOPE → WALL_SPEC/WINDOW_SPEC</strong>: ゾーンの外皮は壁・窓仕様を参照</li>
+        </ul>
+    </div>
+
+    <script>mermaid.initialize({startOnLoad:true, er: {layoutDirection: 'TB'}});</script>
+</body>
+</html>
