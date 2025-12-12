@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBPRO データベース E-R図（日本語版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif; 
+            background: #1a1a2e; 
+            min-height: 100vh;
+            overflow: auto;
+        }
+        .container {
+            width: 5000px;
+            height: 4000px;
+            position: relative;
+            padding: 20px;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 10px 20px;
+            z-index: 1000;
+            border-bottom: 2px solid #4a4a6a;
+        }
+        .header h1 { color: #fff; font-size: 18px; display: inline; }
+        .header .stats { color: #aaa; font-size: 12px; margin-left: 20px; }
+        
+        .entity {
+            position: absolute;
+            background: linear-gradient(135deg, #2d2d44, #1e1e32);
+            border: 2px solid #4a4a6a;
+            border-radius: 8px;
+            min-width: 220px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-size: 11px;
+        }
+        .entity-header {
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 6px 6px 0 0;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .entity-header .sheet { 
+            font-size: 10px; 
+            background: rgba(255,255,255,0.2); 
+            padding: 2px 6px; 
+            border-radius: 10px; 
+        }
+        .entity-body { padding: 6px 0; }
+        .field {
+            padding: 3px 12px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .field:hover { background: rgba(255,255,255,0.05); }
+        .field.pk { color: #ffd700; font-weight: bold; }
+        .field.fk { color: #7ecfff; }
+        .field-icon { font-size: 10px; width: 14px; }
+        .field-name { flex: 1; }
+        .field-unit { color: #888; font-size: 10px; }
+        
+        .cat-core .entity-header { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .cat-envelope .entity-header { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .cat-hvac .entity-header { background: linear-gradient(135deg, #eb3349, #f45c43); }
+        .cat-vent .entity-header { background: linear-gradient(135deg, #00b4db, #0083b0); }
+        .cat-light .entity-header { background: linear-gradient(135deg, #f7971e, #ffd200); }
+        .cat-hw .entity-header { background: linear-gradient(135deg, #cc2b5e, #753a88); }
+        .cat-other .entity-header { background: linear-gradient(135deg, #485563, #29323c); }
+        
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .relation { stroke: #4a6fa5; stroke-width: 1.5; fill: none; opacity: 0.6; }
+        
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #4a4a6a;
+            z-index: 1000;
+        }
+        .legend-title { color: #fff; font-size: 12px; margin-bottom: 10px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; color: #ccc; font-size: 11px; }
+        .legend-color { width: 16px; height: 16px; border-radius: 3px; }
+        
+        .section-label {
+            position: absolute;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 WEBPRO入力シート データベース構造図（日本語版）</h1>
+        <span class="stats">22テーブル / 様式0〜8 / シート項目名そのまま表示</span>
+    </div>
+    
+    <div class="container" id="container">
+        <svg id="relations"></svg>
+        
+        <!-- セクションラベル -->
+        <div class="section-label" style="left: 50px; top: 70px;">【基本情報】</div>
+        <div class="section-label" style="left: 50px; top: 750px;">【外皮・断熱】</div>
+        <div class="section-label" style="left: 900px; top: 70px;">【空調設備】</div>
+        <div class="section-label" style="left: 1900px; top: 70px;">【換気設備】</div>
+        <div class="section-label" style="left: 2250px; top: 70px;">【照明設備】</div>
+        <div class="section-label" style="left: 2600px; top: 70px;">【給湯設備】</div>
+        <div class="section-label" style="left: 2950px; top: 70px;">【その他設備】</div>
+        
+        <!-- ========== 様式0: 基本情報 ========== -->
+        <div class="entity cat-core" style="left: 50px; top: 100px;" id="buildings">
+            <div class="entity-header">
+                <span>🏢 基本情報</span>
+                <span class="sheet">様式0</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">建物の名称</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">建築物所在地（都道府県）</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">省エネ基準地域区分</span></div>
+                <div class="field"><span class="field-icon">⑪</span><span class="field-name">延べ面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">⑫</span><span class="field-name">年間日射地域区分</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式1: 室仕様 ========== -->
+        <div class="entity cat-core" style="left: 50px; top: 320px;" id="rooms">
+            <div class="entity-header">
+                <span>🚪 室仕様</span>
+                <span class="sheet">様式1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">室ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">建物用途</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階高</span><span class="field-unit">[m]</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">天井高</span><span class="field-unit">[m]</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">空調計算対象室</span><span class="field-unit">■/空白</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">換気計算対象室</span><span class="field-unit">■/空白</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">照明計算対象室</span><span class="field-unit">■/空白</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">給湯計算対象室</span><span class="field-unit">■/空白</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">建築物の名称（複数建築物の指定）</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-1: 空調ゾーン ========== -->
+        <div class="entity cat-core" style="left: 350px; top: 320px;" id="zones">
+            <div class="entity-header">
+                <span>🌡️ 空調ゾーン</span>
+                <span class="sheet">様式2-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">ゾーンID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階（室）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階高</span><span class="field-unit">[m]</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">天井高</span><span class="field-unit">[m]</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">階（ゾーン）</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">空調ゾーン名</span></div>
+                <div class="field fk"><span class="field-icon">③</span><span class="field-name">室負荷処理（空調機群名称）</span></div>
+                <div class="field fk"><span class="field-icon">④</span><span class="field-name">外気負荷処理（空調機群名称）</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-2: 外壁構成（親） ========== -->
+        <div class="entity cat-envelope" style="left: 50px; top: 780px;" id="wall_specs">
+            <div class="entity-header">
+                <span>🧱 外壁構成</span>
+                <span class="sheet">様式2-2</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">外壁仕様ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">外壁名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">壁の種類</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">熱貫流率</span><span class="field-unit">[W/㎡K]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">日射吸収率</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-2: 外壁構成（子：層） ========== -->
+        <div class="entity cat-envelope" style="left: 50px; top: 1020px;" id="wall_layers">
+            <div class="entity-header">
+                <span>📚 外壁構成（層）</span>
+                <span class="sheet">様式2-2子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">外壁仕様ID</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">層順序</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">建材番号</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">建材名称</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">熱伝導率</span><span class="field-unit">[W/mK]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">厚み</span><span class="field-unit">[mm]</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-3: 窓仕様 ========== -->
+        <div class="entity cat-envelope" style="left: 320px; top: 780px;" id="window_specs">
+            <div class="entity-header">
+                <span>🪟 窓仕様</span>
+                <span class="sheet">様式2-3</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">窓仕様ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">開口部名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">窓の熱貫流率</span><span class="field-unit">[W/㎡K]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">窓の日射熱取得率</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">建具の種類</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">ガラスの種類</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">ガラス熱貫流率</span><span class="field-unit">[W/㎡K]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">ガラス日射熱取得率</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-4: 外皮 ========== -->
+        <div class="entity cat-envelope" style="left: 590px; top: 780px;" id="envelopes">
+            <div class="entity-header">
+                <span>🏠 外皮</span>
+                <span class="sheet">様式2-4</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">外皮ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">空調ゾーン名</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">方位</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">日除け効果係数（冷房）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">日除け効果係数（暖房）</span><span class="field-unit">[-]</span></div>
+                <div class="field fk"><span class="field-icon">④</span><span class="field-name">外壁名称</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">外皮面積（窓含）</span><span class="field-unit">[㎡]</span></div>
+                <div class="field fk"><span class="field-icon">⑥</span><span class="field-name">開口部名称</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">窓面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">ブラインドの有無</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-5: 熱源（親） ========== -->
+        <div class="entity cat-hvac" style="left: 900px; top: 100px;" id="hs_groups">
+            <div class="entity-header">
+                <span>🔥 熱源群</span>
+                <span class="sheet">様式2-5</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">熱源群ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">熱源群名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">冷暖同時供給有無</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">台数制御</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">運転モード</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">蓄熱容量</span><span class="field-unit">[MJ]</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-5: 熱源（子） ========== -->
+        <div class="entity cat-hvac" style="left: 900px; top: 350px;" id="hs_units">
+            <div class="entity-header">
+                <span>⚙️ 熱源機器</span>
+                <span class="sheet">様式2-5子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">熱源機器ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">熱源群ID</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">熱源機種</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">【冷房】運転順位</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">【冷房】台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">【冷房】送水温度</span><span class="field-unit">[℃]</span></div>
+                <div class="field"><span class="field-icon">⑩</span><span class="field-name">【冷房】定格冷却能力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑪</span><span class="field-name">【冷房】主機 定格消費エネルギー</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑫</span><span class="field-name">【冷房】補機 定格消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑬</span><span class="field-name">【冷房】一次ポンプ定格消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑭</span><span class="field-name">冷却塔 定格冷却能力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑮</span><span class="field-name">冷却塔ファン消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑯</span><span class="field-name">冷却水ポンプ消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑰</span><span class="field-name">【暖房】運転順位</span></div>
+                <div class="field"><span class="field-icon">⑱</span><span class="field-name">【暖房】台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">⑲</span><span class="field-name">【暖房】送水温度</span><span class="field-unit">[℃]</span></div>
+                <div class="field"><span class="field-icon">⑳</span><span class="field-name">【暖房】定格加熱能力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">㉑</span><span class="field-name">【暖房】主機 定格消費エネルギー</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">㉒</span><span class="field-name">【暖房】補機 定格消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">㉓</span><span class="field-name">【暖房】一次ポンプ定格消費電力</span><span class="field-unit">[kW]</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-6: 二次ポンプ（親） ========== -->
+        <div class="entity cat-hvac" style="left: 1220px; top: 100px;" id="pump_groups">
+            <div class="entity-header">
+                <span>💧 二次ポンプ群</span>
+                <span class="sheet">様式2-6</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">二次ポンプ群ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">二次ポンプ群名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">台数制御の有無</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">冷房時温度差</span><span class="field-unit">[℃]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">暖房時温度差</span><span class="field-unit">[℃]</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-6: 二次ポンプ（子） ========== -->
+        <div class="entity cat-hvac" style="left: 1220px; top: 320px;" id="pump_units">
+            <div class="entity-header">
+                <span>🔧 二次ポンプ機器</span>
+                <span class="sheet">様式2-6子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">二次ポンプ機器ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">二次ポンプ群ID</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">運転順位</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">定格流量</span><span class="field-unit">[m³/h台]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">定格消費電力</span><span class="field-unit">[kW/台]</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">流量制御方式</span></div>
+                <div class="field"><span class="field-icon">⑩</span><span class="field-name">変流量時最小流量比</span><span class="field-unit">[%]</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-7: 空調機（親） ========== -->
+        <div class="entity cat-hvac" style="left: 1520px; top: 100px;" id="ahu_groups">
+            <div class="entity-header">
+                <span>❄️ 空調機群</span>
+                <span class="sheet">様式2-7</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">空調機群ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">空調機群名称</span></div>
+                <div class="field fk"><span class="field-icon">㉑</span><span class="field-name">二次ポンプ群名称（冷熱）</span></div>
+                <div class="field fk"><span class="field-icon">㉒</span><span class="field-name">二次ポンプ群名称（温熱）</span></div>
+                <div class="field fk"><span class="field-icon">㉓</span><span class="field-name">熱源群名称（冷熱）</span></div>
+                <div class="field fk"><span class="field-icon">㉔</span><span class="field-name">熱源群名称（温熱）</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式2-7: 空調機（子） ========== -->
+        <div class="entity cat-hvac" style="left: 1520px; top: 350px;" id="ahu_units">
+            <div class="entity-header">
+                <span>🌀 空調機器</span>
+                <span class="sheet">様式2-7子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">空調機器ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">空調機群ID</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">空調機タイプ</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">定格冷却(冷房)能力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">定格加熱(暖房)能力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">設計最大外気風量</span><span class="field-unit">[m³/h]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">給気ファン消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">還気ファン消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">外気ファン消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑩</span><span class="field-name">排気ファン消費電力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑪</span><span class="field-name">風量制御方式</span></div>
+                <div class="field"><span class="field-icon">⑫</span><span class="field-name">変風量時 最小風量比</span><span class="field-unit">[%]</span></div>
+                <div class="field"><span class="field-icon">⑬</span><span class="field-name">予熱時外気取り入れ停止の有無</span></div>
+                <div class="field"><span class="field-icon">⑭</span><span class="field-name">外気冷房制御の有無</span></div>
+                <div class="field"><span class="field-icon">⑮</span><span class="field-name">全熱交換器の有無</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式3-1: 換気室 ========== -->
+        <div class="entity cat-vent" style="left: 1900px; top: 100px;" id="vent_rooms">
+            <div class="entity-header">
+                <span>🌬️ 換気室</span>
+                <span class="sheet">様式3-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">換気室ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">換気種類（給気/排気/循環/空調）</span></div>
+                <div class="field fk"><span class="field-icon">③</span><span class="field-name">換気機器名称</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式3-2: 換気送風機 ========== -->
+        <div class="entity cat-vent" style="left: 1900px; top: 400px;" id="vent_fans">
+            <div class="entity-header">
+                <span>🔄 換気送風機</span>
+                <span class="sheet">様式3-2</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">換気送風機ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">換気機器名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">設計風量</span><span class="field-unit">[m³/h]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">電動機定格出力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">高効率電動機の有無</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">インバータの有無</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">送風量制御</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式4: 照明 ========== -->
+        <div class="entity cat-light" style="left: 2200px; top: 100px;" id="lighting">
+            <div class="entity-header">
+                <span>💡 照明</span>
+                <span class="sheet">様式4</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">照明ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">天井高</span><span class="field-unit">[m]</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">機器名称（照明器具表の記号等）</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">定格消費電力</span><span class="field-unit">[W/台]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">在室検知制御</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">明るさ検知制御</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">タイムスケジュール制御</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">初期照度補正機能</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式5-1: 給湯室 ========== -->
+        <div class="entity cat-hw" style="left: 2500px; top: 100px;" id="hw_rooms">
+            <div class="entity-header">
+                <span>🚿 給湯室</span>
+                <span class="sheet">様式5-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">給湯室ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">給湯箇所（給湯栓設置箇所）</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">節湯器具</span></div>
+                <div class="field fk"><span class="field-icon">④</span><span class="field-name">給湯機器名称</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式5-2: 給湯機器 ========== -->
+        <div class="entity cat-hw" style="left: 2500px; top: 420px;" id="hw_equipment">
+            <div class="entity-header">
+                <span>🔥 給湯機器</span>
+                <span class="sheet">様式5-2</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">給湯機器ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">給湯機器名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">燃料種類</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">定格加熱能力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">熱源効率（一次エネルギー換算）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">配管保温仕様</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">接続口径</span><span class="field-unit">[mm]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">有効集熱面積（太陽熱）</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">集熱面の方位角</span><span class="field-unit">[°]</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">集熱面の傾斜角</span><span class="field-unit">[°]</span></div>
+                <div class="field"><span class="field-icon">⑩</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式6: 昇降機 ========== -->
+        <div class="entity cat-other" style="left: 2850px; top: 100px;" id="elevators">
+            <div class="entity-header">
+                <span>🛗 昇降機</span>
+                <span class="sheet">様式6</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">昇降機ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">機器名称（機器表の記号等）</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">積載量</span><span class="field-unit">[kg]</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">速度</span><span class="field-unit">[m/min]</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">輸送能力係数</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">速度制御方式</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式7-1: 太陽光発電 ========== -->
+        <div class="entity cat-other" style="left: 3150px; top: 100px;" id="pv">
+            <div class="entity-header">
+                <span>☀️ 太陽光発電</span>
+                <span class="sheet">様式7-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">太陽光発電ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">太陽光発電システム名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">パワーコンディショナの効率</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">太陽電池の種類</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">アレイ設置方式</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">アレイのシステム容量</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">パネルの方位角</span><span class="field-unit">[°]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">パネルの傾斜角</span><span class="field-unit">[°]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式7-3: コージェネレーション ========== -->
+        <div class="entity cat-other" style="left: 3150px; top: 400px;" id="cogen">
+            <div class="entity-header">
+                <span>⚡ コージェネレーション設備</span>
+                <span class="sheet">様式7-3</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">コジェネID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">コージェネレーション設備名称</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">定格発電出力</span><span class="field-unit">[kW]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">設置台数</span><span class="field-unit">[台]</span></div>
+                <div class="field"><span class="field-icon">④</span><span class="field-name">発電効率（負荷率100%）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">発電効率（負荷率75%）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑥</span><span class="field-name">発電効率（負荷率50%）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">排熱効率（負荷率100%）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">排熱効率（負荷率75%）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑨</span><span class="field-name">排熱効率（負荷率50%）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">⑩</span><span class="field-name">空調 冷熱源運転優先順位</span></div>
+                <div class="field"><span class="field-icon">⑪</span><span class="field-name">空調 温熱源運転優先順位</span></div>
+                <div class="field"><span class="field-icon">⑫</span><span class="field-name">給湯運転優先順位</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 様式8: 非空調外皮 ========== -->
+        <div class="entity cat-envelope" style="left: 900px; top: 780px;" id="non_ac_envelope">
+            <div class="entity-header">
+                <span>🏚️ 非空調外皮</span>
+                <span class="sheet">様式8</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">非空調外皮ID</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">建物ID</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">非空調ゾーン名</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（大分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室用途（小分類）</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">室面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">①</span><span class="field-name">階高</span><span class="field-unit">[m]</span></div>
+                <div class="field"><span class="field-icon">②</span><span class="field-name">方位</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">日除け効果係数（冷房）</span><span class="field-unit">[-]</span></div>
+                <div class="field"><span class="field-icon">③</span><span class="field-name">日除け効果係数（暖房）</span><span class="field-unit">[-]</span></div>
+                <div class="field fk"><span class="field-icon">④</span><span class="field-name">外壁名称</span></div>
+                <div class="field"><span class="field-icon">⑤</span><span class="field-name">外皮面積（窓含）</span><span class="field-unit">[㎡]</span></div>
+                <div class="field fk"><span class="field-icon">⑥</span><span class="field-name">窓名称</span></div>
+                <div class="field"><span class="field-icon">⑦</span><span class="field-name">窓面積</span><span class="field-unit">[㎡]</span></div>
+                <div class="field"><span class="field-icon">⑧</span><span class="field-name">備考</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-title">📋 凡例</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>基本情報（様式0, 1, 2-1）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #11998e, #38ef7d);"></div>外皮・断熱（様式2-2〜4, 8）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #eb3349, #f45c43);"></div>空調設備（様式2-5〜7）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #00b4db, #0083b0);"></div>換気設備（様式3）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #f7971e, #ffd200);"></div>照明設備（様式4）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #cc2b5e, #753a88);"></div>給湯設備（様式5）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #485563, #29323c);"></div>その他（様式6, 7）</div>
+        <div class="legend-item" style="margin-top: 10px;"><span style="color: #ffd700;">🔑</span> 主キー（PK）</div>
+        <div class="legend-item"><span style="color: #7ecfff;">🔗</span> 外部キー（FK）</div>
+        <div class="legend-item"><span style="color: #888;">①②③...</span> シート上の項目番号</div>
+    </div>
+    
+    <script>
+        const relations = [
+            {from: 'buildings', to: 'rooms'},
+            {from: 'buildings', to: 'zones'},
+            {from: 'buildings', to: 'wall_specs'},
+            {from: 'buildings', to: 'window_specs'},
+            {from: 'buildings', to: 'hs_groups'},
+            {from: 'buildings', to: 'pump_groups'},
+            {from: 'buildings', to: 'ahu_groups'},
+            {from: 'buildings', to: 'vent_rooms'},
+            {from: 'buildings', to: 'vent_fans'},
+            {from: 'buildings', to: 'lighting'},
+            {from: 'buildings', to: 'hw_rooms'},
+            {from: 'buildings', to: 'hw_equipment'},
+            {from: 'buildings', to: 'elevators'},
+            {from: 'buildings', to: 'pv'},
+            {from: 'buildings', to: 'cogen'},
+            {from: 'wall_specs', to: 'wall_layers'},
+            {from: 'hs_groups', to: 'hs_units'},
+            {from: 'pump_groups', to: 'pump_units'},
+            {from: 'ahu_groups', to: 'ahu_units'},
+            {from: 'zones', to: 'ahu_groups'},
+            {from: 'ahu_groups', to: 'hs_groups'},
+            {from: 'ahu_groups', to: 'pump_groups'},
+            {from: 'envelopes', to: 'wall_specs'},
+            {from: 'envelopes', to: 'window_specs'},
+            {from: 'non_ac_envelope', to: 'wall_specs'},
+            {from: 'vent_rooms', to: 'vent_fans'},
+            {from: 'hw_rooms', to: 'hw_equipment'},
+        ];
+        
+        function drawRelations() {
+            const svg = document.getElementById('relations');
+            svg.innerHTML = '';
+            
+            relations.forEach(rel => {
+                const fromEl = document.getElementById(rel.from);
+                const toEl = document.getElementById(rel.to);
+                if (!fromEl || !toEl) return;
+                
+                const fromRect = fromEl.getBoundingClientRect();
+                const toRect = toEl.getBoundingClientRect();
+                const container = document.getElementById('container').getBoundingClientRect();
+                
+                const fromX = fromRect.left - container.left + fromRect.width;
+                const fromY = fromRect.top - container.top + fromRect.height / 2;
+                const toX = toRect.left - container.left;
+                const toY = toRect.top - container.top + toRect.height / 2;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const midX = (fromX + toX) / 2;
+                path.setAttribute('d', `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`);
+                path.setAttribute('class', 'relation');
+                svg.appendChild(path);
+            });
+        }
+        
+        setTimeout(drawRelations, 100);
+        window.addEventListener('resize', drawRelations);
+    </script>
+</body>
+</html>

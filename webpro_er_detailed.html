@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBPRO Database E-R Diagram (Full Detail)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background: #1a1a2e; 
+            min-height: 100vh;
+            overflow: auto;
+        }
+        .container {
+            width: 4500px;
+            height: 3200px;
+            position: relative;
+            padding: 20px;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 10px 20px;
+            z-index: 1000;
+            border-bottom: 2px solid #4a4a6a;
+        }
+        .header h1 { color: #fff; font-size: 18px; display: inline; }
+        .header .stats { color: #aaa; font-size: 12px; margin-left: 20px; }
+        .controls {
+            position: fixed;
+            top: 50px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        .controls button {
+            padding: 8px 16px;
+            background: #4a4a6a;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button:hover { background: #6a6a8a; }
+        
+        .entity {
+            position: absolute;
+            background: linear-gradient(135deg, #2d2d44, #1e1e32);
+            border: 2px solid #4a4a6a;
+            border-radius: 8px;
+            min-width: 200px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-size: 11px;
+        }
+        .entity-header {
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 6px 6px 0 0;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .entity-header .count { 
+            font-size: 10px; 
+            background: rgba(255,255,255,0.2); 
+            padding: 2px 6px; 
+            border-radius: 10px; 
+        }
+        .entity-body { padding: 6px 0; }
+        .field {
+            padding: 3px 12px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .field:hover { background: rgba(255,255,255,0.05); }
+        .field.pk { color: #ffd700; font-weight: bold; }
+        .field.fk { color: #7ecfff; }
+        .field-icon { font-size: 10px; width: 14px; }
+        .field-name { flex: 1; }
+        .field-type { color: #888; font-size: 10px; }
+        
+        /* カテゴリ別の色 */
+        .cat-core .entity-header { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .cat-envelope .entity-header { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .cat-hvac .entity-header { background: linear-gradient(135deg, #eb3349, #f45c43); }
+        .cat-vent .entity-header { background: linear-gradient(135deg, #00b4db, #0083b0); }
+        .cat-light .entity-header { background: linear-gradient(135deg, #f7971e, #ffd200); }
+        .cat-hw .entity-header { background: linear-gradient(135deg, #cc2b5e, #753a88); }
+        .cat-other .entity-header { background: linear-gradient(135deg, #485563, #29323c); }
+        
+        /* リレーション線 */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .relation { stroke: #4a6fa5; stroke-width: 1.5; fill: none; }
+        .relation-label {
+            font-size: 10px;
+            fill: #888;
+        }
+        
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #4a4a6a;
+            z-index: 1000;
+        }
+        .legend-title { color: #fff; font-size: 12px; margin-bottom: 10px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; color: #ccc; font-size: 11px; }
+        .legend-color { width: 16px; height: 16px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WEBPRO Database E-R Diagram</h1>
+        <span class="stats">22テーブル / 864レコード / 全フィールド表示</span>
+    </div>
+    
+    <div class="controls">
+        <button onclick="location.reload()">リセット</button>
+    </div>
+    
+    <div class="container" id="container">
+        <svg id="relations"></svg>
+        
+        <!-- ========== 基本情報 ========== -->
+        <div class="entity cat-core" style="left: 100px; top: 100px;" id="buildings">
+            <div class="entity-header">
+                <span>🏢 buildings</span>
+                <span class="count">様式0</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">building_id</span><span class="field-type">PK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">prefecture</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">region</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">total_area</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">solar_region</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 室仕様 ========== -->
+        <div class="entity cat-core" style="left: 100px; top: 320px;" id="rooms">
+            <div class="entity-header">
+                <span>🚪 rooms</span>
+                <span class="count">様式1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">room_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">building_use</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor_height</span><span class="field-type">REAL m</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ceiling_height</span><span class="field-type">REAL m</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">is_ac_target</span><span class="field-type">BOOL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">is_vent_target</span><span class="field-type">BOOL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">is_light_target</span><span class="field-type">BOOL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">is_hw_target</span><span class="field-type">BOOL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">sub_building_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 空調ゾーン ========== -->
+        <div class="entity cat-core" style="left: 400px; top: 320px;" id="zones">
+            <div class="entity-header">
+                <span>🌡️ zones</span>
+                <span class="count">様式2-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">zone_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor_height</span><span class="field-type">REAL m</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ceiling_height</span><span class="field-type">REAL m</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">zone_floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">zone_name</span><span class="field-type">TEXT</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">ahu_group_room_load</span><span class="field-type">FK→ahu</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">ahu_group_oa_load</span><span class="field-type">FK→ahu</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 外壁仕様 ========== -->
+        <div class="entity cat-envelope" style="left: 100px; top: 780px;" id="wall_specs">
+            <div class="entity-header">
+                <span>🧱 wall_specs</span>
+                <span class="count">様式2-2</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">wall_spec_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">wall_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">wall_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">u_value</span><span class="field-type">REAL W/㎡K</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">absorption</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 外壁層 ========== -->
+        <div class="entity cat-envelope" style="left: 100px; top: 1020px;" id="wall_layers">
+            <div class="entity-header">
+                <span>📚 wall_layers</span>
+                <span class="count">様式2-2子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">wall_spec_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">layer_order</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">material_no</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">material_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">conductivity</span><span class="field-type">REAL W/mK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">thickness_mm</span><span class="field-type">REAL mm</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 窓仕様 ========== -->
+        <div class="entity cat-envelope" style="left: 350px; top: 780px;" id="window_specs">
+            <div class="entity-header">
+                <span>🪟 window_specs</span>
+                <span class="count">様式2-3</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">window_spec_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">window_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">u_value_total</span><span class="field-type">REAL W/㎡K</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">eta_value_total</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">frame_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">glass_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">u_value_glass</span><span class="field-type">REAL W/㎡K</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">eta_value_glass</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 外皮 ========== -->
+        <div class="entity cat-envelope" style="left: 620px; top: 780px;" id="envelopes">
+            <div class="entity-header">
+                <span>🏠 envelopes</span>
+                <span class="count">様式2-4</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">envelope_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">zone_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">direction</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">shade_coef_cool</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">shade_coef_heat</span><span class="field-type">REAL</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">wall_spec_name</span><span class="field-type">FK→wall</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">wall_area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">window_spec_name</span><span class="field-type">FK→win</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">window_area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">blind</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 熱源グループ ========== -->
+        <div class="entity cat-hvac" style="left: 950px; top: 100px;" id="hs_groups">
+            <div class="entity-header">
+                <span>🔥 heat_source_groups</span>
+                <span class="count">様式2-5</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">hs_group_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">group_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">simultaneous_supply</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">unit_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">operation_mode</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">storage_capacity_mj</span><span class="field-type">REAL MJ</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 熱源ユニット ========== -->
+        <div class="entity cat-hvac" style="left: 950px; top: 340px;" id="hs_units">
+            <div class="entity-header">
+                <span>⚙️ heat_source_units</span>
+                <span class="count">様式2-5子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">hs_unit_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">hs_group_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">equipment_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">priority_cool</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity_cool</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">supply_temp_cool</span><span class="field-type">REAL ℃</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">cooling_capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">main_power_cool_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">aux_power_cool_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">pump_power_cool_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ct_capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ct_fan_power_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ct_pump_power_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">priority_heat</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity_heat</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">supply_temp_heat</span><span class="field-type">REAL ℃</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">heating_capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">main_power_heat_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">aux_power_heat_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">pump_power_heat_kw</span><span class="field-type">REAL kW</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 二次ポンプグループ ========== -->
+        <div class="entity cat-hvac" style="left: 1250px; top: 100px;" id="pump_groups">
+            <div class="entity-header">
+                <span>💧 pump_groups</span>
+                <span class="count">様式2-6</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">pump_group_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">group_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">unit_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">temp_diff_cool</span><span class="field-type">REAL ℃</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">temp_diff_heat</span><span class="field-type">REAL ℃</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 二次ポンプユニット ========== -->
+        <div class="entity cat-hvac" style="left: 1250px; top: 300px;" id="pump_units">
+            <div class="entity-header">
+                <span>🔧 pump_units</span>
+                <span class="count">様式2-6子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">pump_unit_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">pump_group_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">priority</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">flow_rate_m3h</span><span class="field-type">REAL m³/h</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">power_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">flow_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">min_flow_ratio_pct</span><span class="field-type">REAL %</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 空調機グループ ========== -->
+        <div class="entity cat-hvac" style="left: 1530px; top: 100px;" id="ahu_groups">
+            <div class="entity-header">
+                <span>❄️ ahu_groups</span>
+                <span class="count">様式2-7</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">ahu_group_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">group_name</span><span class="field-type">TEXT</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">pump_group_cool</span><span class="field-type">FK→pump</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">pump_group_heat</span><span class="field-type">FK→pump</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">hs_group_cool</span><span class="field-type">FK→hs</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">hs_group_heat</span><span class="field-type">FK→hs</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 空調機ユニット ========== -->
+        <div class="entity cat-hvac" style="left: 1530px; top: 340px;" id="ahu_units">
+            <div class="entity-header">
+                <span>🌀 ahu_units</span>
+                <span class="count">様式2-7子</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">ahu_unit_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">ahu_group_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ahu_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">cooling_capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">heating_capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">design_oa_flow_m3h</span><span class="field-type">REAL m³/h</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">fan_supply_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">fan_return_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">fan_oa_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">fan_exhaust_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">volume_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">min_volume_ratio_pct</span><span class="field-type">REAL %</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">preheat_oa_stop</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">oa_cooling_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">hex_type</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 換気室 ========== -->
+        <div class="entity cat-vent" style="left: 1900px; top: 100px;" id="vent_rooms">
+            <div class="entity-header">
+                <span>🌬️ vent_rooms</span>
+                <span class="count">様式3-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">vent_room_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">vent_type</span><span class="field-type">TEXT</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">equipment_name</span><span class="field-type">FK→fan</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 換気送風機 ========== -->
+        <div class="entity cat-vent" style="left: 1900px; top: 380px;" id="vent_fans">
+            <div class="entity-header">
+                <span>🔄 vent_fans</span>
+                <span class="count">様式3-2</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">vent_fan_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">equipment_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">design_flow_m3h</span><span class="field-type">REAL m³/h</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">motor_power_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">high_efficiency</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">inverter</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">flow_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 照明 ========== -->
+        <div class="entity cat-light" style="left: 2200px; top: 100px;" id="lighting">
+            <div class="entity-header">
+                <span>💡 lighting</span>
+                <span class="count">様式4</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">lighting_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ceiling_height</span><span class="field-type">REAL m</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">fixture_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">power_per_unit_w</span><span class="field-type">REAL W</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">occupancy_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">daylight_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">schedule_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">initial_lumen_correction</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 給湯室 ========== -->
+        <div class="entity cat-hw" style="left: 2500px; top: 100px;" id="hw_rooms">
+            <div class="entity-header">
+                <span>🚿 hw_rooms</span>
+                <span class="count">様式5-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">hw_room_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">tap_location</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">water_saving_device</span><span class="field-type">TEXT</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">equipment_name</span><span class="field-type">FK→equip</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 給湯機器 ========== -->
+        <div class="entity cat-hw" style="left: 2500px; top: 400px;" id="hw_equipment">
+            <div class="entity-header">
+                <span>🔥 hw_equipment</span>
+                <span class="count">様式5-2</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">hw_equip_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">equipment_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">fuel_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">heating_capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">efficiency</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">pipe_insulation</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">pipe_size_mm</span><span class="field-type">REAL mm</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">solar_collector_area_m2</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">collector_azimuth_deg</span><span class="field-type">REAL °</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">collector_tilt_deg</span><span class="field-type">REAL °</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 昇降機 ========== -->
+        <div class="entity cat-other" style="left: 2800px; top: 100px;" id="elevators">
+            <div class="entity-header">
+                <span>🛗 elevators</span>
+                <span class="count">様式6</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">elevator_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">equipment_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">load_capacity_kg</span><span class="field-type">REAL kg</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">speed_m_min</span><span class="field-type">REAL m/min</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">transport_coefficient</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">speed_control</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 太陽光発電 ========== -->
+        <div class="entity cat-other" style="left: 3100px; top: 100px;" id="pv">
+            <div class="entity-header">
+                <span>☀️ pv</span>
+                <span class="count">様式7-1</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">pv_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">system_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">pcs_efficiency</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">cell_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">mount_type</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">capacity_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">azimuth_deg</span><span class="field-type">REAL °</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">tilt_deg</span><span class="field-type">REAL °</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== コージェネ ========== -->
+        <div class="entity cat-other" style="left: 3100px; top: 380px;" id="cogen">
+            <div class="entity-header">
+                <span>⚡ cogen</span>
+                <span class="count">様式7-3</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">cogen_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">equipment_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">rated_power_kw</span><span class="field-type">REAL kW</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">quantity</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">power_eff_100</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">power_eff_75</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">power_eff_50</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">heat_eff_100</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">heat_eff_75</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">heat_eff_50</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ac_cool_priority</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">ac_heat_priority</span><span class="field-type">INT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">hw_priority</span><span class="field-type">INT</span></div>
+            </div>
+        </div>
+        
+        <!-- ========== 非空調外皮 ========== -->
+        <div class="entity cat-envelope" style="left: 900px; top: 780px;" id="non_ac_envelope">
+            <div class="entity-header">
+                <span>🏚️ non_ac_envelope</span>
+                <span class="count">様式8</span>
+            </div>
+            <div class="entity-body">
+                <div class="field pk"><span class="field-icon">🔑</span><span class="field-name">non_ac_envelope_id</span><span class="field-type">PK</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">building_id</span><span class="field-type">FK</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">zone_name</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_major</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">room_use_minor</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">floor_height</span><span class="field-type">REAL m</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">direction</span><span class="field-type">TEXT</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">shade_coef_cool</span><span class="field-type">REAL</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">shade_coef_heat</span><span class="field-type">REAL</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">wall_spec_name</span><span class="field-type">FK→wall</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">wall_area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field fk"><span class="field-icon">🔗</span><span class="field-name">window_spec_name</span><span class="field-type">FK→win</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">window_area</span><span class="field-type">REAL ㎡</span></div>
+                <div class="field"><span class="field-icon"></span><span class="field-name">note</span><span class="field-type">TEXT</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-title">凡例</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>基本（様式0-2-1）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #11998e, #38ef7d);"></div>外皮（様式2-2〜4,8）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #eb3349, #f45c43);"></div>空調（様式2-5〜7）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #00b4db, #0083b0);"></div>換気（様式3）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #f7971e, #ffd200);"></div>照明（様式4）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #cc2b5e, #753a88);"></div>給湯（様式5）</div>
+        <div class="legend-item"><div class="legend-color" style="background: linear-gradient(135deg, #485563, #29323c);"></div>その他（様式6,7）</div>
+        <div class="legend-item" style="margin-top: 10px;"><span style="color: #ffd700;">🔑 PK</span> 主キー</div>
+        <div class="legend-item"><span style="color: #7ecfff;">🔗 FK</span> 外部キー</div>
+    </div>
+    
+    <script>
+        // リレーション描画
+        const relations = [
+            // buildings → 各テーブル
+            {from: 'buildings', to: 'rooms', label: '1:N'},
+            {from: 'buildings', to: 'zones', label: '1:N'},
+            {from: 'buildings', to: 'wall_specs', label: '1:N'},
+            {from: 'buildings', to: 'window_specs', label: '1:N'},
+            {from: 'buildings', to: 'hs_groups', label: '1:N'},
+            {from: 'buildings', to: 'pump_groups', label: '1:N'},
+            {from: 'buildings', to: 'ahu_groups', label: '1:N'},
+            {from: 'buildings', to: 'vent_rooms', label: '1:N'},
+            {from: 'buildings', to: 'vent_fans', label: '1:N'},
+            {from: 'buildings', to: 'lighting', label: '1:N'},
+            {from: 'buildings', to: 'hw_rooms', label: '1:N'},
+            {from: 'buildings', to: 'hw_equipment', label: '1:N'},
+            {from: 'buildings', to: 'elevators', label: '1:N'},
+            {from: 'buildings', to: 'pv', label: '1:N'},
+            {from: 'buildings', to: 'cogen', label: '1:N'},
+            
+            // 親子関係
+            {from: 'wall_specs', to: 'wall_layers', label: '1:N'},
+            {from: 'hs_groups', to: 'hs_units', label: '1:N'},
+            {from: 'pump_groups', to: 'pump_units', label: '1:N'},
+            {from: 'ahu_groups', to: 'ahu_units', label: '1:N'},
+            
+            // FK参照
+            {from: 'zones', to: 'ahu_groups', label: 'FK'},
+            {from: 'ahu_groups', to: 'hs_groups', label: 'FK'},
+            {from: 'ahu_groups', to: 'pump_groups', label: 'FK'},
+            {from: 'envelopes', to: 'wall_specs', label: 'FK'},
+            {from: 'envelopes', to: 'window_specs', label: 'FK'},
+            {from: 'non_ac_envelope', to: 'wall_specs', label: 'FK'},
+            {from: 'vent_rooms', to: 'vent_fans', label: 'FK'},
+            {from: 'hw_rooms', to: 'hw_equipment', label: 'FK'},
+        ];
+        
+        function drawRelations() {
+            const svg = document.getElementById('relations');
+            svg.innerHTML = '';
+            
+            relations.forEach(rel => {
+                const fromEl = document.getElementById(rel.from);
+                const toEl = document.getElementById(rel.to);
+                if (!fromEl || !toEl) return;
+                
+                const fromRect = fromEl.getBoundingClientRect();
+                const toRect = toEl.getBoundingClientRect();
+                const container = document.getElementById('container').getBoundingClientRect();
+                
+                // エンティティの中心点を計算
+                const fromX = fromRect.left - container.left + fromRect.width;
+                const fromY = fromRect.top - container.top + fromRect.height / 2;
+                const toX = toRect.left - container.left;
+                const toY = toRect.top - container.top + toRect.height / 2;
+                
+                // パスを作成
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const midX = (fromX + toX) / 2;
+                path.setAttribute('d', `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`);
+                path.setAttribute('class', 'relation');
+                svg.appendChild(path);
+            });
+        }
+        
+        // 初期描画
+        setTimeout(drawRelations, 100);
+        window.addEventListener('resize', drawRelations);
+    </script>
+</body>
+</html>
